@@ -1628,38 +1628,15 @@ function initMap() {
 
   leafletMap = L.map('map-leaflet', {center:[49.42,20.43], zoom:13});
     document.getElementById('map-leaflet')._leaflet_map = leafletMap;
+
+  L.tileLayer(TILE_URL, {
+    attribution:'© <a href="https://www.esri.com">Esri</a> © OpenStreetMap contributors',
+    maxZoom:18
+  }).addTo(leafletMap);
   setTimeout(function(){ leafletMap.invalidateSize(); }, 100);
 
   // Tile layer with Cache API fallback
-  L.TileLayer.Cached = L.TileLayer.extend({
-    createTile: function(coords, done) {
-      var img = document.createElement('img');
-      img.setAttribute('role','presentation');
-      var url = this.getTileUrl(coords);
-      if ('caches' in window) {
-        caches.open(CACHE_NAME).then(function(cache){
-          cache.match(url).then(function(resp){
-            if (resp) {
-              resp.blob().then(function(b){ img.src=URL.createObjectURL(b); done(null,img); });
-            } else {
-              fetch(url,{mode:'cors',credentials:'omit'}).then(function(r){
-                cache.put(url,r.clone()); return r.blob();
-              }).then(function(b){ img.src=URL.createObjectURL(b); done(null,img); })
-              .catch(function(){ img.src=url; img.onload=function(){done(null,img);}; img.onerror=function(e){done(e,img);}; });
-            }
-          });
-        });
-      } else {
-        img.src=url; img.onload=function(){done(null,img);}; img.onerror=function(e){done(e,img);};
-      }
-      return img;
-    }
-  });
-
-  new L.TileLayer.Cached(TILE_URL, {
-    attribution:'© <a href="https://www.esri.com">Esri</a> © OpenStreetMap contributors',
-    maxZoom:18, subdomains:[]
-  }).addTo(leafletMap);
+  ;
 
   // Peak markers
   MAP_PEAKS.forEach(function(p){
@@ -1701,30 +1678,9 @@ function mapCenterUser() {
 }
 
 function mapDownloadArea() {
-  if(!('caches' in window)){alert('Przeglądarka nie obsługuje cache offline.');return;}
-  var btn=document.getElementById('map-dl-btn');
-  btn.textContent='⏳ 0%'; btn.disabled=true;
-  var bounds=leafletMap?leafletMap.getBounds():null;
-  var urls=[];
-  for(var z=11;z<=15;z++){
-    var n1=bounds?bounds.getNorth():49.48, w1=bounds?bounds.getWest():20.27;
-    var s1=bounds?bounds.getSouth():49.37, e1=bounds?bounds.getEast():20.58;
-    var t1=ll2tile(n1,w1,z), t2=ll2tile(s1,e1,z);
-    for(var x=t1.x;x<=t2.x;x++) for(var y=t1.y;y<=t2.y;y++)
-      urls.push(TILE_URL.replace('{z}',z).replace('{x}',x).replace('{y}',y));
-  }
-  var done=0,total=urls.length;
-  caches.open(CACHE_NAME).then(function(cache){
-    function next(i){
-      if(i>=total){ btn.textContent='✓ Pobrano '+total+' kafelków'; btn.disabled=false; updateMapCacheInfo(); return; }
-      var batch=urls.slice(i,i+6);
-      Promise.allSettled(batch.map(function(url){
-        return cache.match(url).then(function(r){ if(r) return; return fetch(url,{mode:'cors',credentials:'omit'}).then(function(r2){ if(r2.ok) return cache.put(url,r2); }); });
-      })).then(function(){ done+=batch.length; btn.textContent='⏳ '+Math.round(done/total*100)+'%'; next(i+6); });
-    }
-    next(0);
-  });
+  alert('Mapa jest dostępna w trybie online. Kafelki są automatycznie buforowane przez przeglądarkę.');
 }
+
 
 function ll2tile(lat,lon,z){
   var n=Math.pow(2,z);
