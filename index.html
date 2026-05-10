@@ -1542,7 +1542,7 @@ var leafletMap = null;
 var mapUserMarker = null;
 var mapGpsWatchId = null;
 var mapReady = false;
-var TILE_URL = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+var TILE_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
 var CACHE_NAME = 'pieniny-tiles-v1';
 var MAP_PEAKS = [
   {name:"Trzy Korony",    lat:49.41361,lon:20.41417,alt:982},
@@ -1642,7 +1642,7 @@ function initMap() {
             if (resp) {
               resp.blob().then(function(b){ img.src=URL.createObjectURL(b); done(null,img); });
             } else {
-              fetch(url,{mode:'cors'}).then(function(r){
+              fetch(url,{mode:'cors',credentials:'omit'}).then(function(r){
                 cache.put(url,r.clone()); return r.blob();
               }).then(function(b){ img.src=URL.createObjectURL(b); done(null,img); })
               .catch(function(){ img.src=url; img.onload=function(){done(null,img);}; img.onerror=function(e){done(e,img);}; });
@@ -1657,8 +1657,8 @@ function initMap() {
   });
 
   new L.TileLayer.Cached(TILE_URL, {
-    attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a> © <a href="https://opentopomap.org">OpenTopoMap</a>',
-    maxZoom:18, subdomains:['a','b','c']
+    attribution:'© <a href="https://www.esri.com">Esri</a> © OpenStreetMap contributors',
+    maxZoom:18, subdomains:[]
   }).addTo(leafletMap);
 
   // Peak markers
@@ -1711,7 +1711,7 @@ function mapDownloadArea() {
     var s1=bounds?bounds.getSouth():49.37, e1=bounds?bounds.getEast():20.58;
     var t1=ll2tile(n1,w1,z), t2=ll2tile(s1,e1,z);
     for(var x=t1.x;x<=t2.x;x++) for(var y=t1.y;y<=t2.y;y++)
-      ['a','b','c'].forEach(function(s){ urls.push(TILE_URL.replace('{s}',s).replace('{z}',z).replace('{x}',x).replace('{y}',y)); });
+      urls.push(TILE_URL.replace('{z}',z).replace('{x}',x).replace('{y}',y));
   }
   var done=0,total=urls.length;
   caches.open(CACHE_NAME).then(function(cache){
@@ -1719,7 +1719,7 @@ function mapDownloadArea() {
       if(i>=total){ btn.textContent='✓ Pobrano '+total+' kafelków'; btn.disabled=false; updateMapCacheInfo(); return; }
       var batch=urls.slice(i,i+6);
       Promise.allSettled(batch.map(function(url){
-        return cache.match(url).then(function(r){ if(r) return; return fetch(url,{mode:'cors'}).then(function(r2){ if(r2.ok) return cache.put(url,r2); }); });
+        return cache.match(url).then(function(r){ if(r) return; return fetch(url,{mode:'cors',credentials:'omit'}).then(function(r2){ if(r2.ok) return cache.put(url,r2); }); });
       })).then(function(){ done+=batch.length; btn.textContent='⏳ '+Math.round(done/total*100)+'%'; next(i+6); });
     }
     next(0);
