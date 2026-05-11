@@ -2027,14 +2027,17 @@ function initMap() {
     document.getElementById('map-leaflet')._leaflet_map = leafletMap;
   console.log('Map created, adding tiles...');
 
+  console.log('Step 1: creating tileLayer');
   var tl = L.tileLayer(TILE_URL, {
     attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom:19,
     crossOrigin: 'anonymous',
     errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
   });
+  console.log('Step 2: tileLayer created, adding to map');
   tl.on('tileerror', function(e){ console.log('tile err suppressed'); });
   tl.addTo(leafletMap);
+  console.log('Step 3: tileLayer added, adding peaks');
   setTimeout(function(){ leafletMap.invalidateSize(); }, 100);
 
   // Peak markers
@@ -2050,9 +2053,11 @@ function initMap() {
     })(p);
   });
 
+  console.log('Step 4: peaks added, starting GPS');
   updateMapCacheInfo();
   startMapGPS();
   mapReady = true;
+  console.log('Step 5: initMap complete');
 }
 
 function startMapGPS() {
