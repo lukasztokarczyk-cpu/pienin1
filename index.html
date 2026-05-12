@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
+<script>window.onerror=function(m){if(m&&(m.indexOf('Unexpected')>-1||m.indexOf('SyntaxError')>-1))return true;return false;};</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
@@ -720,8 +721,23 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 9999; pointer-eve
   background: #0a1208;
 }
 </style>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css">
+<script>
+// Prevent Worker from loading page URL (Samsung Browser fix)
+(function() {
+  var OrigWorker = window.Worker;
+  if (OrigWorker) {
+    window.Worker = function(url, opts) {
+      if (typeof url === 'string' && url.indexOf(window.location.origin) !== -1) {
+        throw new Error('Worker URL blocked');
+      }
+      return new OrigWorker(url, opts);
+    };
+    window.Worker.prototype = OrigWorker.prototype;
+  }
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js"></script>
 
 <body>
 
@@ -1992,21 +2008,34 @@ function initMap() {
   try {
     leafletMap = L.map('map-leaflet').setView([49.42, 20.43], 13);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '© <a href="https://carto.com">CARTO</a> © <a href="https://openstreetmap.org">OSM</a>',
       maxZoom: 19,
-      subdomains: ['a','b','c']
+      subdomains: ['a','b','c','d'],
+      crossOrigin: true
     }).addTo(leafletMap);
 
     // Peak markers
     MAP_PEAKS.forEach(function(p) {
-      var icon = L.divIcon({
-        className: '',
-        html: '<div style="background:rgba(6,16,10,0.92);border:1.5px solid #c9a84c;border-radius:8px;padding:4px 8px;font-size:0.7rem;color:#f5efe0;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.5);">▲ ' + p.name + ' <small style="opacity:0.5">' + p.alt + 'm</small></div>',
-        iconAnchor: [0, 8]
-      });
-      L.marker([p.lat, p.lon], {icon: icon}).addTo(leafletMap)
-        .bindPopup('<b>' + p.name + '</b><br>' + p.alt + ' m n.p.m.<br><a href="#" onclick="showTrailPanel(\'' + p.name + '\');return false;" style="color:#c9a84c;">🥾 Pokaż szlaki</a>');
+      (function(peak) {
+        var icon = L.divIcon({
+          className: '',
+          html: '<div style="background:rgba(6,16,10,0.92);border:1.5px solid #c9a84c;border-radius:8px;padding:5px 10px;font-size:0.72rem;color:#f5efe0;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.5);cursor:pointer;">▲ ' + peak.name + ' <span style="opacity:0.5;font-size:0.62rem;">' + peak.alt + 'm</span></div>',
+          iconAnchor: [0, 8]
+        });
+        var marker = L.marker([peak.lat, peak.lon], {icon: icon}).addTo(leafletMap);
+        marker.on('click', function() {
+          showTrailPanel(peak.name);
+        });
+        marker.bindPopup(
+          '<div style="min-width:160px;">' +
+          '<b style="font-size:0.95rem;">' + peak.name + '</b><br>' +
+          '<span style="font-size:0.8rem;color:#666;">' + peak.alt + ' m n.p.m.</span><br><br>' +
+          '<button onclick="showTrailPanel(' + JSON.stringify(peak.name) + ')" ' +
+          'style="width:100%;padding:8px;background:#1a5a2e;border:none;border-radius:6px;color:#fff;font-size:0.8rem;cursor:pointer;">🥾 Pokaż szlaki</button>' +
+          '</div>'
+        );
+      })(p);
     });
 
     setTimeout(function() { leafletMap.invalidateSize(); }, 200);
