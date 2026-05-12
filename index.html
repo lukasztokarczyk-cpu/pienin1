@@ -1050,71 +1050,40 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 9999; pointer-eve
 
 <!-- MAP PAGE -->
 <div class="page slide-right" id="page-map">
-  <div style="display:flex;align-items:center;gap:12px;padding:14px 16px 10px;background:rgba(10,18,8,0.98);border-bottom:1px solid rgba(201,168,76,0.15);flex-shrink:0;position:relative;z-index:10;">
-    <button class="attr-back-btn" onclick="goBack();stopMapGPS();">
+  <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(10,18,8,0.98);border-bottom:1px solid rgba(201,168,76,0.15);flex-shrink:0;z-index:10;position:relative;">
+    <button class="attr-back-btn" onclick="goBack();if(leafletMap){leafletMap.remove();leafletMap=null;mapReady=false;}">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
     <div>
-      <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-style:italic;color:#f5efe0;">Mapy offline</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-style:italic;color:#f5efe0;">Mapy</div>
       <div style="font-size:0.62rem;color:#c9a84c;letter-spacing:2px;">PIENINY · OSM</div>
     </div>
-    <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-      <div style="background:rgba(0,0,0,0.4);border:1px solid rgba(42,157,143,0.4);border-radius:16px;padding:4px 10px;font-size:0.65rem;color:rgba(255,255,255,0.8);display:flex;align-items:center;gap:5px;">
-        <div style="width:5px;height:5px;border-radius:50%;background:#2a9d8f;animation:pulse-dot 2s infinite;"></div>
-        <span id="map-gps-txt">GPS…</span>
-      </div>
+    <div style="margin-left:auto;">
+      <span id="map-gps-txt" style="font-size:0.68rem;color:rgba(255,255,255,0.5);">GPS…</span>
     </div>
   </div>
-  <div id="map-leaflet" style="flex:1;position:relative;z-index:1;min-height:200px;"></div>
-
-  <!-- NAVIGATION HUD (active during navigation) -->
-  <div id="nav-hud" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9998;
-    background:linear-gradient(180deg,rgba(6,16,10,0.97),rgba(6,16,10,0.85));
-    padding:12px 16px 10px;border-bottom:1px solid rgba(201,168,76,0.2);">
+  <div id="map-leaflet" style="flex:1;width:100%;min-height:300px;"></div>
+  <div id="nav-hud" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:rgba(6,16,10,0.97);padding:12px 16px;border-bottom:1px solid rgba(201,168,76,0.2);">
     <div style="display:flex;align-items:center;gap:12px;">
-      <!-- Direction arrow -->
-      <div style="flex-shrink:0;width:56px;height:56px;border-radius:50%;
-        background:rgba(201,168,76,0.12);border:2px solid rgba(201,168,76,0.4);
-        display:flex;align-items:center;justify-content:center;">
-        <div id="nav-arrow" style="font-size:1.8rem;transition:transform 0.3s;">↑</div>
-      </div>
+      <div id="nav-arrow" style="font-size:2rem;width:50px;text-align:center;">↑</div>
       <div style="flex:1;">
-        <div id="nav-next-name" style="font-family:'Playfair Display',serif;font-size:0.95rem;color:#f5efe0;font-style:italic;">---</div>
-        <div style="display:flex;gap:12px;margin-top:3px;">
-          <span style="font-size:0.75rem;color:#c9a84c;">📍 <span id="nav-dist">--</span></span>
-          <span style="font-size:0.75rem;color:rgba(255,255,255,0.5);">⏱ <span id="nav-time">--</span></span>
-          <span style="font-size:0.75rem;color:rgba(255,255,255,0.5);">🧭 <span id="nav-bearing">--°</span></span>
+        <div id="nav-next-name" style="font-family:'Playfair Display',serif;font-size:0.95rem;color:#f5efe0;">---</div>
+        <div style="display:flex;gap:10px;margin-top:3px;font-size:0.75rem;">
+          <span style="color:#c9a84c;">📍 <span id="nav-dist">--</span></span>
+          <span style="color:rgba(255,255,255,0.5);">⏱ <span id="nav-time">--</span></span>
+          <span style="color:rgba(255,255,255,0.5);">🧭 <span id="nav-bearing">--°</span></span>
         </div>
       </div>
-      <button onclick="stopNavigation()" style="flex-shrink:0;padding:6px 12px;
-        background:rgba(192,57,43,0.2);border:1px solid rgba(192,57,43,0.4);
-        border-radius:20px;color:#e74c3c;font-size:0.7rem;letter-spacing:1px;cursor:pointer;">
-        ■ STOP
-      </button>
+      <button onclick="stopNavigation()" style="padding:6px 12px;background:rgba(192,57,43,0.3);border:1px solid rgba(192,57,43,0.5);border-radius:16px;color:#e74c3c;font-size:0.7rem;cursor:pointer;">■ STOP</button>
     </div>
-    <!-- Progress bar -->
-    <div style="margin-top:8px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;">
+    <div style="margin-top:6px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;">
       <div id="nav-progress" style="height:100%;background:linear-gradient(90deg,#2196F3,#4CAF50);border-radius:2px;width:0%;transition:width 0.5s;"></div>
     </div>
-    <div style="display:flex;justify-content:space-between;margin-top:3px;">
-      <span id="nav-step-label" style="font-size:0.62rem;color:rgba(255,255,255,0.35);">Punkt 0/0</span>
-      <span id="nav-total-dist" style="font-size:0.62rem;color:rgba(255,255,255,0.35);">Cel: --</span>
+    <div style="display:flex;justify-content:space-between;margin-top:2px;font-size:0.62rem;color:rgba(255,255,255,0.35);">
+      <span id="nav-step-label">0/0</span><span id="nav-total-dist"></span>
     </div>
   </div>
-  <!-- Trail info panel -->
-  <div id="trail-panel" style="display:none;position:absolute;bottom:80px;left:12px;right:12px;z-index:30;
-    background:rgba(6,16,10,0.97);border:1px solid rgba(201,168,76,0.3);border-radius:14px;
-    padding:14px 16px;max-height:55%;overflow-y:auto;backdrop-filter:blur(10px);"></div>
-  <div style="position:absolute;bottom:0;left:0;right:0;z-index:20;padding:10px 16px 16px;
-    background:linear-gradient(0deg,rgba(10,18,8,0.96),transparent);
-    display:flex;justify-content:space-between;align-items:flex-end;pointer-events:none;">
-    <div style="pointer-events:auto;">
-      <div id="map-cache-info" style="font-size:0.65rem;color:rgba(255,255,255,0.45);margin-bottom:5px;">Kafelki: sprawdzanie…</div>
-      <button onclick="toggleTrails()" id="map-trail-btn" style="padding:9px 16px;background:linear-gradient(135deg,#1a3a6a,#2a5aaa);border:1px solid rgba(30,144,255,0.5);border-radius:20px;color:#f5efe0;font-size:0.75rem;letter-spacing:1px;cursor:pointer;margin-bottom:6px;">🥾 Szlaki: ON</button><br>
-      <button id="map-dl-btn" onclick="mapDownloadArea()" style="padding:9px 18px;background:linear-gradient(135deg,#1a5a2e,#2a7a42);border:1px solid rgba(201,168,76,0.4);border-radius:20px;color:#f5efe0;font-size:0.75rem;letter-spacing:1px;cursor:pointer;">⬇ Pobierz offline</button>
-    </div>
-    <button onclick="mapCenterUser()" style="pointer-events:auto;width:46px;height:46px;border-radius:50%;background:rgba(10,18,8,0.9);border:1px solid rgba(201,168,76,0.4);color:#c9a84c;font-size:1.3rem;cursor:pointer;">◎</button>
-  </div>
+  <div id="trail-panel" style="display:none;position:absolute;bottom:0;left:0;right:0;z-index:30;background:rgba(6,16,10,0.97);border-top:1px solid rgba(201,168,76,0.3);padding:14px 16px;max-height:50%;overflow-y:auto;"></div>
 </div>
 
 
@@ -2011,45 +1980,41 @@ function stopMapGPS() {
 
 function initMap() {
   if (typeof L === 'undefined') { setTimeout(initMap, 300); return; }
-  var container = document.getElementById('map-leaflet');
-  if (!container) return;
+  var el = document.getElementById('map-leaflet');
+  if (!el) return;
 
-  if (mapReady && leafletMap) { 
-    leafletMap.invalidateSize(); 
-    startMapGPS(); 
-    return; 
+  if (leafletMap) {
+    try { leafletMap.invalidateSize(); } catch(e) {}
+    startMapGPS();
+    return;
   }
 
-  leafletMap = L.map('map-leaflet', {center:[49.42,20.43], zoom:13});
-    document.getElementById('map-leaflet')._leaflet_map = leafletMap;
-  // Use a proxy-free tile URL with proper CORS
-  var tl = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution:'© <a href="https://www.openstreetmap.org">OpenStreetMap</a>',
-    maxZoom:19,
-    subdomains:['a','b','c'],
-    crossOrigin: false,
-    errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-  });
-  tl.on('tileerror', function(e){ e.tile.src=tl.options.errorTileUrl; });
-  tl.addTo(leafletMap);
-  setTimeout(function(){ leafletMap.invalidateSize(); }, 100);
+  try {
+    leafletMap = L.map('map-leaflet').setView([49.42, 20.43], 13);
 
-  // Peak markers
-  MAP_PEAKS.forEach(function(p){
-    var icon = L.divIcon({className:'',
-      html:'<div style="background:rgba(6,16,10,0.92);border:1.5px solid #c9a84c;border-radius:8px;padding:4px 8px;font-size:0.72rem;color:#f5efe0;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.5);">▲ '+p.name+' <span style="color:rgba(255,255,255,0.45);font-size:0.62rem;">'+p.alt+'m</span></div>',
-      iconAnchor:[0,8]
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19,
+      subdomains: ['a','b','c']
+    }).addTo(leafletMap);
+
+    // Peak markers
+    MAP_PEAKS.forEach(function(p) {
+      var icon = L.divIcon({
+        className: '',
+        html: '<div style="background:rgba(6,16,10,0.92);border:1.5px solid #c9a84c;border-radius:8px;padding:4px 8px;font-size:0.7rem;color:#f5efe0;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.5);">▲ ' + p.name + ' <small style="opacity:0.5">' + p.alt + 'm</small></div>',
+        iconAnchor: [0, 8]
+      });
+      L.marker([p.lat, p.lon], {icon: icon}).addTo(leafletMap)
+        .bindPopup('<b>' + p.name + '</b><br>' + p.alt + ' m n.p.m.<br><a href="#" onclick="showTrailPanel(\'' + p.name + '\');return false;" style="color:#c9a84c;">🥾 Pokaż szlaki</a>');
     });
-    (function(peak){
-      var m = L.marker([peak.lat,peak.lon],{icon:icon}).addTo(leafletMap);
-      m.bindPopup('<b>'+peak.name+'</b><br>'+peak.alt+' m n.p.m.<br><a href="#" onclick="showTrailPanel(\''+peak.name+'\');return false;" style="color:#c9a84c;">🥾 Pokaż szlaki</a>');
-      trailLayers; // reference
-    })(p);
-  });
 
-updateMapCacheInfo();
-  startMapGPS();
-  mapReady = true;
+    setTimeout(function() { leafletMap.invalidateSize(); }, 200);
+    mapReady = true;
+    startMapGPS();
+  } catch(err) {
+    console.error('Map error:', err);
+  }
 }
 
 function startMapGPS() {
@@ -2242,73 +2207,71 @@ var ARRIVE_RADIUS  = 30; // metres — auto-advance to next point
 
 function startNavigation(peakName, trailIdx) {
   var trail = TRAILS[peakName] && TRAILS[peakName][trailIdx];
-  if (!trail) return;
+  if (!trail) { alert('Brak danych szlaku'); return; }
 
   navTrail    = trail;
   navPointIdx = 0;
   navActive   = true;
 
-  // Hide trail panel
+  // Close trail panel
   closeTrailPanel();
-
-  // Show nav HUD
-  var hud = document.getElementById('nav-hud');
-  if (hud) hud.style.display = 'block';
 
   // Draw trail on map
   drawTrailsForPeak(peakName);
 
-  // Add numbered waypoint markers
-  navMarkers.forEach(function(m){ if(leafletMap) leafletMap.removeLayer(m); });
+  // Waypoint markers
+  navMarkers.forEach(function(m){ try{leafletMap.removeLayer(m);}catch(e){} });
   navMarkers = [];
   trail.points.forEach(function(pt, i) {
-    var isLast = i === trail.points.length - 1;
-    var icon = L.divIcon({
-      className:'',
-      html: '<div style="width:22px;height:22px;border-radius:50%;' +
-            'background:' + (isLast ? '#e74c3c' : 'rgba(201,168,76,0.9)') + ';' +
-            'color:#000;font-size:0.6rem;font-weight:700;border:2px solid #fff;' +
-            'display:flex;align-items:center;justify-content:center;' +
-            'box-shadow:0 2px 8px rgba(0,0,0,0.5);">' +
-            (isLast ? '🏁' : (i+1)) + '</div>',
-      iconAnchor:[11,11]
+    var isLast = (i === trail.points.length - 1);
+    var col = isLast ? '#e74c3c' : '#c9a84c';
+    var lbl = isLast ? '🏁' : String(i+1);
+    var icon = L.divIcon({className:'',
+      html:'<div style="width:24px;height:24px;border-radius:50%;background:'+col+';color:#000;font-size:0.6rem;font-weight:700;border:2px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.5);">'+lbl+'</div>',
+      iconAnchor:[12,12]
     });
-    var m = L.marker([pt[0],pt[1]],{icon:icon}).addTo(leafletMap);
-    navMarkers.push(m);
+    try {
+      var m = L.marker([pt[0],pt[1]],{icon:icon}).addTo(leafletMap);
+      navMarkers.push(m);
+    } catch(e){}
   });
 
-  // Set total distance label
-  var totalEl = document.getElementById('nav-total-dist');
-  if (totalEl) totalEl.textContent = 'Cel: ' + trail.points[trail.points.length-1][0].toFixed(4) + ',' + trail.points[trail.points.length-1][1].toFixed(4);
-  if (totalEl) totalEl.textContent = 'Do celu: ' + trail.distance;
+  // Set start position
+  if (userPos) {
+    navUserPos = {lat:userPos.lat, lon:userPos.lon};
+  } else {
+    navUserPos = {lat:trail.points[0][0], lon:trail.points[0][1]};
+  }
 
-  // Use existing userPos as starting point if available
-  if (userPos) navUserPos = { lat: userPos.lat, lon: userPos.lon };
-
-  // Start GPS watch for navigation
+  // GPS
   if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
   if (navigator.geolocation) {
     navWatchId = navigator.geolocation.watchPosition(function(pos) {
-      navUserPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-      userPos = { lat: pos.coords.latitude, lon: pos.coords.longitude,
-                  alt: pos.coords.altitude||0, acc: pos.coords.accuracy };
+      navUserPos = {lat:pos.coords.latitude, lon:pos.coords.longitude};
       updateNavigation();
-    }, null, { enableHighAccuracy: true, maximumAge: 1000 });
+    }, function(err){}, {enableHighAccuracy:true, maximumAge:2000});
   }
 
-  // If no GPS yet, show route info from start point
-  if (!navUserPos) {
-    var startPt = trail.points[0];
-    navUserPos = { lat: startPt[0], lon: startPt[1] };
+  // Compass
+  window.removeEventListener('deviceorientation', onNavOrient, true);
+  window.removeEventListener('deviceorientationabsolute', onNavOrient, true);
+  if ('ondeviceorientationabsolute' in window) {
+    window.addEventListener('deviceorientationabsolute', onNavOrient, true);
+  } else {
+    window.addEventListener('deviceorientation', onNavOrient, true);
   }
 
-  // Start orientation for arrow
-  window.addEventListener('deviceorientation', onNavOrient, true);
-  window.addEventListener('deviceorientationabsolute', onNavOrient, true);
+  // Show HUD
+  var hud = document.getElementById('nav-hud');
+  if (hud) {
+    hud.style.display = 'block';
+    hud.style.cssText = 'display:block!important;position:fixed;top:0;left:0;right:0;z-index:9998;background:rgba(6,16,10,0.97);padding:12px 16px;border-bottom:1px solid rgba(201,168,76,0.2);';
+  }
 
-  // Update UI immediately
+  // Update display
   updateNavigationUI();
 }
+
 
 function onNavOrient(e) {
   if (typeof e.webkitCompassHeading === 'number' && e.webkitCompassHeading >= 0) {
@@ -2351,39 +2314,37 @@ function updateNavigation() {
 function updateNavigationUI() {
   if (!navTrail || !navUserPos) return;
 
-  var points   = navTrail.points;
-  var target   = points[Math.min(navPointIdx, points.length-1)];
-  var distM    = haversineM(navUserPos.lat, navUserPos.lon, target[0], target[1]);
-  var bearDeg  = calcBearing(navUserPos.lat, navUserPos.lon, target[0], target[1]);
-  var timeMin  = Math.round(distM / 70); // ~70m/min walking pace
-  var isLast   = navPointIdx >= points.length - 1;
+  var points  = navTrail.points;
+  var tgtIdx  = Math.min(navPointIdx, points.length-1);
+  var target  = points[tgtIdx];
+  var distM   = haversineM(navUserPos.lat, navUserPos.lon, target[0], target[1]);
+  var bearDeg = calcBearing(navUserPos.lat, navUserPos.lon, target[0], target[1]);
+  var timeMin = Math.max(1, Math.round(distM / 70));
+  var isLast  = (navPointIdx >= points.length - 1);
 
-  // Distance text
-  var distTxt = distM > 1000
-    ? (distM/1000).toFixed(1) + ' km'
-    : Math.round(distM) + ' m';
+  var distTxt = distM > 1000 ? (distM/1000).toFixed(1)+' km' : Math.round(distM)+' m';
+  var timeTxt = timeMin < 60 ? timeMin+' min' : Math.floor(timeMin/60)+'h '+(timeMin%60)+'min';
 
-  // Time text
-  var timeTxt = timeMin < 1 ? '<1 min'
-    : timeMin < 60 ? timeMin + ' min'
-    : Math.floor(timeMin/60) + 'h ' + (timeMin%60) + 'min';
+  var nameEl = document.getElementById('nav-next-name');
+  var distEl = document.getElementById('nav-dist');
+  var timeEl = document.getElementById('nav-time');
+  var bearEl = document.getElementById('nav-bearing');
+  var stepEl = document.getElementById('nav-step-label');
+  var progEl = document.getElementById('nav-progress');
+  var totEl  = document.getElementById('nav-total-dist');
 
-  document.getElementById('nav-next-name').textContent =
-    isLast ? '🏁 CEL: ' + navTrail.name.split('(')[0].trim()
-           : 'Pkt ' + (navPointIdx+1) + '/' + points.length;
-
-  document.getElementById('nav-dist').textContent    = distTxt;
-  document.getElementById('nav-time').textContent    = timeTxt;
-  document.getElementById('nav-bearing').textContent = Math.round(bearDeg) + '°';
-  document.getElementById('nav-step-label').textContent =
-    'Punkt ' + (navPointIdx+1) + '/' + points.length;
-
-  var pct = (navPointIdx / (points.length - 1)) * 100;
-  document.getElementById('nav-progress').style.width = pct + '%';
+  if (nameEl) nameEl.textContent = isLast ? '🏁 '+navTrail.name.split('(')[0].trim() : 'Punkt '+(navPointIdx+1)+'/'+points.length;
+  if (distEl) distEl.textContent = distTxt;
+  if (timeEl) timeEl.textContent = timeTxt;
+  if (bearEl) bearEl.textContent = Math.round(bearDeg)+'°';
+  if (stepEl) stepEl.textContent = (navPointIdx+1)+'/'+points.length;
+  if (totEl)  totEl.textContent  = navTrail.distance;
+  if (progEl) progEl.style.width = Math.round((navPointIdx/(points.length-1))*100)+'%';
 
   navUpdateArrowBearing = bearDeg;
   updateNavArrow();
 }
+
 
 var navUpdateArrowBearing = 0;
 function updateNavArrow() {
