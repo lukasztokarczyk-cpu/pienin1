@@ -719,9 +719,10 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 9999; pointer-eve
   flex-direction: column;
   overflow: hidden;
   background: #0a1208;
+  height: 100%;
 }
 </style>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script>
 // Prevent Worker from loading page URL (Samsung Browser fix)
 (function() {
@@ -737,7 +738,7 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 9999; pointer-eve
   }
 })();
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
 <body>
 
@@ -1078,28 +1079,9 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 9999; pointer-eve
       <span id="map-gps-txt" style="font-size:0.68rem;color:rgba(255,255,255,0.5);">GPS…</span>
     </div>
   </div>
-  <div id="map-leaflet" style="flex:1;width:100%;min-height:300px;"></div>
-  <div id="nav-hud" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:rgba(6,16,10,0.97);padding:12px 16px;border-bottom:1px solid rgba(201,168,76,0.2);">
-    <div style="display:flex;align-items:center;gap:12px;">
-      <div id="nav-arrow" style="font-size:2rem;width:50px;text-align:center;">↑</div>
-      <div style="flex:1;">
-        <div id="nav-next-name" style="font-family:'Playfair Display',serif;font-size:0.95rem;color:#f5efe0;">---</div>
-        <div style="display:flex;gap:10px;margin-top:3px;font-size:0.75rem;">
-          <span style="color:#c9a84c;">📍 <span id="nav-dist">--</span></span>
-          <span style="color:rgba(255,255,255,0.5);">⏱ <span id="nav-time">--</span></span>
-          <span style="color:rgba(255,255,255,0.5);">🧭 <span id="nav-bearing">--°</span></span>
-        </div>
-      </div>
-      <button onclick="stopNavigation()" style="padding:6px 12px;background:rgba(192,57,43,0.3);border:1px solid rgba(192,57,43,0.5);border-radius:16px;color:#e74c3c;font-size:0.7rem;cursor:pointer;">■ STOP</button>
-    </div>
-    <div style="margin-top:6px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;">
-      <div id="nav-progress" style="height:100%;background:linear-gradient(90deg,#2196F3,#4CAF50);border-radius:2px;width:0%;transition:width 0.5s;"></div>
-    </div>
-    <div style="display:flex;justify-content:space-between;margin-top:2px;font-size:0.62rem;color:rgba(255,255,255,0.35);">
-      <span id="nav-step-label">0/0</span><span id="nav-total-dist"></span>
-    </div>
-  </div>
-  <div id="trail-panel" style="display:none;position:absolute;bottom:0;left:0;right:0;z-index:30;background:rgba(6,16,10,0.97);border-top:1px solid rgba(201,168,76,0.3);padding:14px 16px;max-height:50%;overflow-y:auto;"></div>
+  <div id="map-leaflet" style="flex:1;width:100%;height:calc(100% - 60px);min-height:300px;"></div>
+    <!-- nav-hud moved to body level -->
+  <!-- trail-panel moved to body level -->
 </div>
 
 
@@ -2038,7 +2020,8 @@ function initMap() {
       })(p);
     });
 
-    setTimeout(function() { leafletMap.invalidateSize(); }, 200);
+    setTimeout(function() { if(leafletMap) leafletMap.invalidateSize(); }, 300);
+    setTimeout(function() { if(leafletMap) leafletMap.invalidateSize(); }, 800);
     mapReady = true;
     startMapGPS();
   } catch(err) {
@@ -2175,15 +2158,18 @@ function showTrailPanel(peakName) {
   var diffLabel = {easy:'Łatwy', medium:'Średni', hard:'Trudny'};
   var diffIcon  = {easy:'🟢', medium:'🟡', hard:'🔴'};
 
+  // Store current peak for nav buttons
+  window._navPeak = peakName;
+
   var panel = document.getElementById('trail-panel');
   if (!panel) return;
 
-  var out = '<div style="font-family:\'Playfair Display\',serif;font-size:1rem;font-style:italic;' +
+  var out = '<div style="font-family:'Playfair Display',serif;font-size:1rem;font-style:italic;' +
     'color:#f5efe0;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(201,168,76,0.2);">' +
     '🥾 Szlaki — ' + peakName + '</div>';
 
   trails.forEach(function(t, i) {
-    var col  = colorMap[t.color] || '#888';
+    var col = colorMap[t.color] || '#888';
     out += '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">';
     out += '<div style="display:flex;align-items:flex-start;gap:10px;">';
     out += '<div style="width:4px;min-height:44px;background:' + col + ';border-radius:2px;flex-shrink:0;margin-top:2px;"></div>';
@@ -2191,14 +2177,14 @@ function showTrailPanel(peakName) {
     out += '<div style="font-size:0.82rem;color:#f5efe0;font-weight:600;">' + t.name + '</div>';
     out += '<div style="font-size:0.7rem;color:rgba(255,255,255,0.5);margin-top:2px;">' +
            diffIcon[t.difficulty] + ' ' + diffLabel[t.difficulty] +
-           ' · ⏱ ' + t.time + ' · 📏 ' + t.distance + '</div>';
+           ' &middot; ⏱ ' + t.time + ' &middot; 📏 ' + t.distance + '</div>';
     out += '</div></div>';
-    // Navigation button
-    out += '<button style="margin-top:6px;width:100%;padding:8px;' +
+    // Use data-idx attribute instead of onclick with quotes
+    out += '<button class="nav-trail-btn" data-peak="' + i + '" ' +
+           'style="margin-top:6px;width:100%;padding:8px;' +
            'background:linear-gradient(135deg,#1a4a2e,#1e6b40);' +
            'border:1px solid rgba(201,168,76,0.35);border-radius:8px;' +
-           'color:#f5efe0;font-size:0.75rem;letter-spacing:1.5px;cursor:pointer;" ' +
-           'onclick="startNavigation(' + JSON.stringify(peakName) + ',' + i + ')">' +
+           'color:#f5efe0;font-size:0.75rem;letter-spacing:1.5px;cursor:pointer;">' +
            '🧭 NAWIGUJ TĄ TRASĄ</button>';
     out += '</div>';
   });
@@ -2209,6 +2195,17 @@ function showTrailPanel(peakName) {
 
   panel.innerHTML = out;
   panel.style.display = 'block';
+
+  // Attach click handlers to nav buttons
+  var btns = panel.querySelectorAll('.nav-trail-btn');
+  btns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var idx = parseInt(this.getAttribute('data-peak'));
+      console.log('Nav btn clicked, peak:', window._navPeak, 'idx:', idx);
+      startNavigation(window._navPeak, idx);
+    });
+  });
+
   drawTrailsForPeak(peakName);
 }
 
@@ -2454,5 +2451,38 @@ function calcBearing(lat1,lon1,lat2,lon2) {
       }
     });
   </script>
+
+<!-- NAV HUD - fixed overlay -->
+<div id="nav-hud" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;
+  background:rgba(6,16,10,0.97);padding:12px 16px;
+  border-bottom:1px solid rgba(201,168,76,0.2);box-shadow:0 4px 20px rgba(0,0,0,0.5);">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div id="nav-arrow" style="font-size:2rem;width:50px;text-align:center;transition:transform 0.3s;">↑</div>
+    <div style="flex:1;">
+      <div id="nav-next-name" style="font-family:'Playfair Display',serif;font-size:0.95rem;color:#f5efe0;">---</div>
+      <div style="display:flex;gap:10px;margin-top:3px;font-size:0.75rem;">
+        <span style="color:#c9a84c;">📍 <span id="nav-dist">--</span></span>
+        <span style="color:rgba(255,255,255,0.5);">⏱ <span id="nav-time">--</span></span>
+        <span style="color:rgba(255,255,255,0.5);">🧭 <span id="nav-bearing">--°</span></span>
+      </div>
+    </div>
+    <button onclick="stopNavigation()" style="padding:8px 14px;background:rgba(192,57,43,0.3);border:1px solid rgba(192,57,43,0.5);border-radius:20px;color:#e74c3c;font-size:0.75rem;cursor:pointer;white-space:nowrap;">■ STOP</button>
+  </div>
+  <div style="margin-top:8px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;">
+    <div id="nav-progress" style="height:100%;background:linear-gradient(90deg,#2196F3,#4CAF50);border-radius:2px;width:0%;transition:width 0.5s;"></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-top:2px;font-size:0.62rem;color:rgba(255,255,255,0.35);">
+    <span id="nav-step-label">0/0</span>
+    <span id="nav-total-dist"></span>
+  </div>
+</div>
+
+<!-- FIXED OVERLAYS - above everything -->
+<div id="trail-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:10000;
+  background:rgba(6,16,10,0.97);border-top:1px solid rgba(201,168,76,0.3);
+  padding:14px 16px;max-height:55vh;overflow-y:auto;
+  box-shadow:0 -4px 20px rgba(0,0,0,0.5);">
+</div>
+
 </body>
 </html>
